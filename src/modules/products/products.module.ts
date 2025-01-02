@@ -3,7 +3,7 @@ import { ProductsService } from './products.service';
 import { ProductsController } from './products.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductEntity } from './entities/product.entity';
-import { AIAgent } from 'src/libs/external.api/misarh';
+import { AIAgent } from 'src/libs/external.api/generativeAI';
 
 @Module({
   imports: [

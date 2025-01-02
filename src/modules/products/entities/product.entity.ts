@@ -10,19 +10,19 @@ export enum ScentType {
 }
 
 export enum Variation {
-  "12ml" = 12,
-  "15ml" = 15,
-  "20ml" = 20,
-  "30ml" = 30,
-  "50ml" = 50,
-  "100ml" = 100
+  "15ml" = "15ml",
+  "30ml" = "30ml",  
+  "20ml" = "20ml",
+  "50ml" = "50ml",
+  "100ml" = "100ml",
 }
 
+
 export enum Category {
-  STANDARD = 'standard',
-  CUSTOM = 'custom', 
-  LIMITED = 'limited', 
-  SIGNATURE = 'signature',
+  SUBLIME = 'SUBLIME',
+  PRESTIGE = 'PRESTIGE',
+  IMPERIAL = 'IMPERIAL',
+  DEFAULT = 'DEFAULT'
 }
 
 export interface MixDetails {
@@ -51,8 +51,8 @@ export class ProductEntity {
   @Column({ type: 'text', nullable: true })
   discount: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true }) 
-  categoryId: string;
+  @Column({ type: 'enum',enum: Category, nullable: true }) 
+  categoryId: Category;
 
   @Column({ type: 'varchar', nullable: true })
   customerId: string;
@@ -60,7 +60,7 @@ export class ProductEntity {
   @Column({ type: 'enum', enum: ScentType, nullable: true })
   scentType: ScentType; 
 
-  @Column({ type: 'enum', enum: Variation, nullable: true })
+  @Column({ type: 'enum', enum: Variation, nullable: true })  // Using the Variation enum here
   variation: Variation; 
 
   @Column({ name: 'notes', type: 'text', nullable: true })

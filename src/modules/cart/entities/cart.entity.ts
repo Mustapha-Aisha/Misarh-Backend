@@ -11,6 +11,7 @@ export class CartEntity {
   @OneToOne(() => Customer, (customer) => customer.cart)
   customer: Customer;
 
+
   @OneToMany(() => CartItemEntity, (cartItem) => cartItem.cart, { cascade: true })
   items: CartItemEntity[];
 

@@ -6,13 +6,13 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { Customer } from '../customer/entities/customer.entity';
 import { CurrentUser } from '../user/decorator/user.decorator';
 
-@Controller('order')
+@Controller('order/') 
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Post()
-  create(@CurrentUser() customer: Customer) {
-    return this.orderService.create(customer);
+  create(@CurrentUser() customer: Customer, data:string) {
+    return this.orderService.create(customer, data);
   }
 
   @Get()

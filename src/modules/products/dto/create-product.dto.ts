@@ -1,4 +1,5 @@
 import { IsString, IsEnum, IsNotEmpty, IsObject, IsOptional } from 'class-validator';
+import { Category, Variation } from '../entities/product.entity';
 
 export class CreateProductDto {
     @IsString()
@@ -20,20 +21,20 @@ export class CreateProductDto {
     @IsOptional()
     image_url?: string;
 
-    @IsString()
+    @IsEnum(Category)
     @IsOptional()
     discount?: string;
 
     @IsString()
     @IsOptional()
-    categoryId?: string;
+    categoryId?: Category;
 
     @IsString()
     @IsOptional()
     colorId?: string;
 
-    @IsString()
+    @IsEnum(Variation)
     @IsOptional()
-    variationId?: string;
+    variation?: Variation;
 
 }

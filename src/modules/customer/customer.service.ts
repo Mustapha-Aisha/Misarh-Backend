@@ -8,6 +8,7 @@ import { CreateCustomerDto } from './dto/create-customer.dto';
 import { generateUniqueIdFromName } from 'src/libs/common/helpers/utils';
 import { CreateLoginDto } from '../auth/dto/authentication.dto';
 import { JwtService } from '@nestjs/jwt';
+import { Console } from 'console';
 
 @Injectable()
 export class CustomerService {
@@ -68,8 +69,6 @@ export class CustomerService {
   }
 
 
-
-
   // Get all customers with optional ordering
   //  TODO: PAGINATE THIS
   async getAllCustomers(orderBy?: { [key: string]: 'ASC' | 'DESC' }): Promise<BaseResponse<Customer[]>> {
@@ -106,30 +105,29 @@ export class CustomerService {
   }
 
   // Update customer details
-  async updateCustomer(id: string, updateCustomerDto: Partial<Customer>): Promise<BaseResponse<Customer>> {
+  async updateCustomer(customer: Customer, data: Partial<Customer>): Promise<BaseResponse<Customer>> {
     try {
-      const customer = await this.customerRepository.findOne({ where: { id } });
-      if (!customer) {
-        return BaseResponse.error(`Customer with ID ${id} not found`, null, HttpStatus.NOT_FOUND);
+      if (data.email || data.phone) {
+        // Check if email or phone is already taken by another customer
+        const existingCustomer = await this.customerRepository.findOne({
+          where: [
+            { email: data.email },
+            { phone: data.phone },
+          ],
+        });
+        if (existingCustomer && existingCustomer.id !== customer.id) {
+          return BaseResponse.error('Email or phone number is already in use', null, HttpStatus.BAD_REQUEST);
+        }
       }
-
-      // if (updateCustomerDto.email || updateCustomerDto.phone) {
-      //   const existingCustomer = await this.customerRepository.findOne({
-      //     where: [
-      //       { email: updateCustomerDto.email },
-      //       { phone: updateCustomerDto.phone },
-      //     ],
-      //   });
-      //   if (existingCustomer && existingCustomer.id !== id) {
-      //     return BaseResponse.error('Email or phone number is already in use', null, HttpStatus.BAD_REQUEST);
-      //   }
-      // }
-
-      await this.customerRepository.update(id, updateCustomerDto);
-      const updatedCustomer = await this.customerRepository.findOne({ where: { id } });
-      return BaseResponse.success(updatedCustomer, 'Customer deleted successfully', HttpStatus.NO_CONTENT);
+      await this.customerRepository.update(customer.id, data);
+      // Fetch the updated customer record
+      const updatedCustomer = await this.customerRepository.findOne({ where: { id: customer.id } });
+      if (!updatedCustomer) {
+        return BaseResponse.error('Customer not found', null, HttpStatus.NOT_FOUND);
+      }
+      return BaseResponse.success(updatedCustomer, 'Customer updated successfully', HttpStatus.OK);
     } catch (error) {
-      return BaseResponse.error(error.message || 'Error deleting customer', null, HttpStatus.INTERNAL_SERVER_ERROR);
+      return BaseResponse.error(error.message || 'Error updating customer', null, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -147,7 +145,6 @@ export class CustomerService {
       return BaseResponse.error("An error occurred while removing the customer", null, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
-
 
   async deleteCustomer(id: string): Promise<BaseResponse<void>> {
     try {

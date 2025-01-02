@@ -9,7 +9,6 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
-// import { ScheduleModule } from '@nestjs/schedule';
 import { AuthGuard } from './modules/auth/guard/auth.guard';
 import { DbTypeOrmConfigService } from './shared/db.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -18,14 +17,13 @@ import { ProductEntity } from './modules/products/entities/product.entity';
 import { HttpModule } from '@nestjs/axios';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProductsModule } from './modules/products/products.module';
-// import { OrderModule } from './order/order.mo/dule';
 import { OrderedProductsModule } from './modules/ordered-products/ordered-products.module';
-// import { CustomerModule } from './modules/customer/customer.module';
-import { AIAgent } from './libs/external.api/misarh';
+import { AIAgent } from './libs/external.api/generativeAI';
 import { CartModule } from './modules/cart/cart.module';
 import { CartItemModule } from './modules/cart-item/cart-item.module';
 import { CustomerModule } from './modules/customer/customer.module';
 import { OrderModule } from './modules/order/order.module';
+import { NotificationModule } from './notification-gateway/notification-gateway.module';
 
 @Module({
   imports: [
@@ -101,7 +99,8 @@ import { OrderModule } from './modules/order/order.module';
     OrderedProductsModule,
     CustomerModule,
     CartModule,
-    CartItemModule
+    CartItemModule,
+    NotificationModule
   ],
   controllers: [AppController],
   providers: [

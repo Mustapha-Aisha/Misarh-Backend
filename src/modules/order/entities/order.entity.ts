@@ -5,7 +5,7 @@ import { BaseEntity } from 'src/shared/BaseEntity';
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 
 export enum OrderStatus {
-    PENDING = 'pending',
+    PLACED = 'placed',
     SHIPPED = 'shipped',
     DELIVERED = 'delivered',
     CANCELLED = 'cancelled',
@@ -20,15 +20,18 @@ export class OrderEntity extends BaseEntity {
   @JoinColumn()
   customer: Customer;
 
-  @Column('timestamp')
+  @Column({type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   date_ordered: Date; 
 
   @Column({
     type: 'enum',
     enum: OrderStatus, 
-    default: OrderStatus.PENDING,
+    default: OrderStatus.PLACED,
   })
   status: OrderStatus; 
+
+  @Column({ name: "paystackRef", default: 0  })
+  paystackRef: string
 
   @Column({ nullable: true })
   trackingId: string; 

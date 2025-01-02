@@ -5,35 +5,35 @@ import { CreateOrderedProductDto } from './dto/create-ordered-product.dto';
 import { UpdateOrderedProductDto } from './dto/update-ordered-product.dto';
 import { BaseResponse } from 'src/libs/response/base_response';
 import { HttpStatus } from '@nestjs/common';
-import { OrderedProductEntity } from './entities/ordered-product.entity';
-import { OrderEntity } from '../order/entities/order.entity';
 import { ProductEntity } from '../products/entities/product.entity';
+import { OrderEntity } from '../order/entities/order.entity';
+import { OrderedProductEntity } from './entities/ordered-product.entity';
 
 @Injectable()
 export class OrderedProductsService {
   constructor(
+    @InjectRepository(OrderEntity)
+    private readonly orderRepository: Repository<OrderEntity>,    
     @InjectRepository(OrderedProductEntity)
     private readonly orderedProductRepository: Repository<OrderedProductEntity>,
     @InjectRepository(ProductEntity)
     private readonly productRepository: Repository<ProductEntity>,
   ) {}
 
-  async create(createOrderedProductDto: CreateOrderedProductDto): Promise<BaseResponse<OrderedProductEntity>> {
+  async create(data: any): Promise<BaseResponse<OrderedProductEntity>> {
     try {
-      const order = await this.orderedProductRepository.findOne({ where: { id: createOrderedProductDto.order } });
-      const product = await this.productRepository.findOne({ where: { id: createOrderedProductDto.product } });
 
-      if (!order || !product) {
+      if (!data.order || !data.product) {
         return BaseResponse.error('Order or Product not found', null, HttpStatus.BAD_REQUEST);
       }
 
       const newOrderedProduct = this.orderedProductRepository.create({
-        order: order,
-        product: product,
-        quantity: createOrderedProductDto.quantity,
+        order: data.order,
+        product: data.product,
+        quantity: data.quantity,
       });
 
-      const savedOrderedProduct = await this.orderedProductRepository.save(newOrderedProduct);
+      const savedOrderedProduct = await this.orderRepository.save(newOrderedProduct);
 
       return BaseResponse.success(savedOrderedProduct, 'Ordered product created successfully', HttpStatus.CREATED);
     } catch (error) {
@@ -43,9 +43,9 @@ export class OrderedProductsService {
   }
 
   // Find all OrderedProducts
-  async findAll(): Promise<BaseResponse<OrderedProductEntity[]>> {
+  async findAll(): Promise<BaseResponse<OrderEntity[]>> {
     try {
-      const orderedProducts = await this.orderedProductRepository.find();
+      const orderedProducts = await this.orderRepository.find();
       if (!orderedProducts.length) {
         return BaseResponse.error("No ordered products found", [], HttpStatus.NOT_FOUND);
       }
@@ -56,9 +56,9 @@ export class OrderedProductsService {
   }
 
   // Find a single OrderedProduct by ID
-  async findOne(id: string): Promise<BaseResponse<OrderedProductEntity>> {
+  async findOne(id: string): Promise<BaseResponse<OrderEntity>> {
     try {
-      const orderedProduct = await this.orderedProductRepository.findOne({ where: { id } });
+      const orderedProduct = await this.orderRepository.findOne({ where: { id } });
       if (!orderedProduct) {
         return BaseResponse.error("Ordered product not found", null, HttpStatus.NOT_FOUND);
       }
@@ -69,7 +69,7 @@ export class OrderedProductsService {
   }
 
   // Update an OrderedProduct by ID
-  async update(id: string, updateOrderedProductDto: UpdateOrderedProductDto): Promise<BaseResponse<OrderedProductEntity>> {
+  async update(id: string, updateOrderedProductDto: UpdateOrderedProductDto): Promise<BaseResponse<OrderEntity>> {
     try {
       let orderedProduct = await this.orderedProductRepository.findOne({ where: { id: id } });
       
@@ -84,19 +84,19 @@ export class OrderedProductsService {
           return BaseResponse.error("Product not found", null, HttpStatus.NOT_FOUND);
         }
       }
-      let orderEntity: OrderEntity = orderedProduct.order; 
+      let OrderEntity: OrderEntity = orderedProduct.order; 
       if (updateOrderedProductDto.order) {
         orderedProduct = await this.orderedProductRepository.findOne({ where: { id: updateOrderedProductDto.order } });
-        if (!orderEntity) {
+        if (!OrderEntity) {
           return BaseResponse.error("Order not found", null, HttpStatus.NOT_FOUND);
         }
       }
   
       // Update the ordered product with the fetched entities and save it
-      const updatedOrderedProduct = await this.orderedProductRepository.save({
+      const updatedOrderedProduct = await this.orderRepository.save({
         ...orderedProduct,
         product: productEntity,
-        order: orderEntity,
+        order: OrderEntity,
       });
   
       return BaseResponse.success(updatedOrderedProduct, "Ordered product updated successfully", HttpStatus.OK);
@@ -110,12 +110,12 @@ export class OrderedProductsService {
   // Delete an OrderedProduct by ID
   async remove(id: string): Promise<BaseResponse<void>> {
     try {
-      const orderedProduct = await this.orderedProductRepository.findOne({ where: { id } });
+      const orderedProduct = await this.orderRepository.findOne({ where: { id } });
       if (!orderedProduct) {
         return BaseResponse.error("Ordered product not found", null, HttpStatus.NOT_FOUND);
       }
 
-      await this.orderedProductRepository.delete(id);
+      await this.orderRepository.delete(id);
       return BaseResponse.success(null, "Ordered product removed successfully", HttpStatus.OK);
     } catch (error) {
       return BaseResponse.error("Error removing ordered product", null, HttpStatus.INTERNAL_SERVER_ERROR);

@@ -6,7 +6,7 @@ import { Repository } from 'typeorm';
 import { ProductEntity } from './entities/product.entity';
 import { BaseResponse } from 'src/libs/response/base_response';
 import { PaginationDto } from 'src/libs/pagination/pagination';
-import { AIAgent } from 'src/libs/external.api/misarh';
+import { AIAgent } from 'src/libs/external.api/generativeAI';
 import { Customer } from '../customer/entities/customer.entity';
 
 @Injectable()
@@ -114,20 +114,33 @@ export class ProductsService {
   }
 
   // Update product by ID
-  async update(id: string, data: UpdateProductDto): Promise<BaseResponse<ProductEntity>> {
+  async update(customer: Customer,id: string, data: UpdateProductDto): Promise<BaseResponse<ProductEntity>> {
     try {
-      const existingProduct = await this.productRepository.findOne({ where: { id: id } });
+
+      console.log(customer)
+      console.log("Database",data)
+      const existingProduct = await this.productRepository.findOne({ where: { id } });
       if (!existingProduct) {
         return BaseResponse.error("Product not found", null, HttpStatus.NOT_FOUND);
       }
-      await this.productRepository.update(id, data);
-      const updatedProduct = await this.productRepository.findOne({ where: { id: id } });
+  
+      existingProduct.name = data.name;
+      existingProduct.price = data.price;
+      existingProduct.variation = data.variation; 
+      existingProduct.customerId = customer.id;
+      existingProduct.categoryId = data.categoryId;
+      existingProduct.image_url = data.image_url; 
+      
+  
+      const updatedProduct = await this.productRepository.save(existingProduct);
+  
       return BaseResponse.success(updatedProduct, "Product updated successfully", HttpStatus.OK);
     } catch (error) {
-      console.error(error);
+      console.error("Error updating product:", error);
       return BaseResponse.error("An error occurred while updating the product", null, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+  
 
   // Soft delete (mark as deleted) a product by ID
   async remove(id: string): Promise<BaseResponse<void>> {

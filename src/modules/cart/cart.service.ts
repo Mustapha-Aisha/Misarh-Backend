@@ -13,10 +13,13 @@ import { error } from 'console';
 import { OrderedProductEntity } from '../ordered-products/entities/ordered-product.entity';
 import { OrderedProductsService } from '../ordered-products/ordered-products.service';
 import { OrderService } from '../order/order.service';
+import { PaystackService } from 'src/libs/external.api/payment/paystack';
+import { QueryRunner } from 'typeorm';
+import { OrderEntity } from '../order/entities/order.entity';
 
 @Injectable()
 export class CartService {
- 
+
   constructor(
     @InjectRepository(CartEntity)
     private cartRepository: Repository<CartEntity>,
@@ -25,11 +28,14 @@ export class CartService {
     @InjectRepository(CartItemEntity)
     private cartItemRepository: Repository<CartItemEntity>,
     private orderService: OrderService,
-    private orderedProductService: OrderedProductsService
+    private orderedProductService: OrderedProductsService,
+    private paystackService: PaystackService
   ) { }
 
   async getCart(customer: Customer) {
+    // console.log(customer)
     let cart = await this.cartRepository.findOne({
+
       where: { customer: { id: customer.id }, isCheckedOut: false },
       relations: ['items', 'items.product'],
     });
@@ -64,90 +70,115 @@ export class CartService {
       }
 
       await this.cartItemRepository.save(cartItem);
-      return BaseResponse.success(cart, 'Item added to cart successfully', HttpStatus.OK);
+      return BaseResponse.success(null, 'Item added to cart successfully', HttpStatus.OK);
     } catch (error) {
       console.error(error);
       return BaseResponse.error('Error adding item to cart', null, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async removeCartItem(customer: Customer, cartItemId: string): Promise<BaseResponse<CartEntity>> {
-    try {
-      const cart = await this.getCart(customer);
-
-      // Find the item in the cart
-      const item = cart.items.find(item => item.id === cartItemId);
-      if (!item) {
-        return BaseResponse.error('Item does not exist', null, HttpStatus.BAD_REQUEST);
-      }
-
-      // Remove the item from the database
-      await this.cartItemRepository.remove(item);
-
-      // Remove the item from the in-memory array
-      cart.items = cart.items.filter(cartItem => cartItem.id !== cartItemId);
-
-      return BaseResponse.success(cart, 'Item removed successfully', HttpStatus.OK);
-    } catch (error) {
-      console.error(error);
-      return BaseResponse.error('Error removing cart item', null, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
   async clearCart(customer: Customer) {
     try {
-      const cart = await this.getCart(customer);
-        if (!cart || cart.items.length === 0) {
+      const cart = await this.cartRepository.findOne({
+        where:{customer},
+        relations: ['items'],  
+      });
+      console.log(cart.items)
+      if (!cart || cart.items.length === 0) {
         return BaseResponse.error("Cart is already empty", null, HttpStatus.BAD_REQUEST);
       }
-        await this.cartItemRepository.delete({ cart: { id: cart.id } });
-        return BaseResponse.success(null, "Cart cleared successfully", HttpStatus.OK);
+      cart.items = [];
+    await this.cartRepository.save(cart);
+
+      return BaseResponse.success(null, "Cart cleared successfully", HttpStatus.OK);
     } catch (error) {
       console.error('Error clearing cart:', error);
       return BaseResponse.error("An error occurred while clearing the cart", null, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async checkout(customer: Customer) {
+  async checkout(customer: Customer, data: any): Promise<BaseResponse<any>> {
+    const queryRunner = this.cartRepository.manager.connection.createQueryRunner();
     try {
+      const total = '100'; // You should calculate this dynamically based on the cart items
+      await queryRunner.startTransaction();
       const cart = await this.getCart(customer);
-  
+      const email = customer.email;
+
       if (!cart || cart.items.length === 0) {
         return BaseResponse.error("Cart is empty", null, HttpStatus.BAD_REQUEST);
       }
+      const paystackResponse = await this.paystackService.initializeTransaction(total, email);
 
-      const order = await this.orderService.create(customer);
-
-      const orderedProducts = cart.items.map(item => ({
-        product: item.product, 
-        order: order,         
-        quantity: item.quantity
-      }));
-  
-      // Create each ordered product in the database
-      (orderedProducts.map(async (orderedProduct) => {
-        const createOrderedProductDto = {
-          product: orderedProduct.product.id, 
-          order: orderedProduct.order.data.id, 
-          quantity: orderedProduct.quantity, 
-        };
-        await this.orderedProductService.create(createOrderedProductDto);
-      }));
-  
-      // Optionally clear the cart after successful checkout
-      await this.clearCart(customer);
-  
-      return BaseResponse.success(order, "Checkout successful", HttpStatus.OK);
+      if (!paystackResponse || !paystackResponse.status) {
+        return BaseResponse.error('Error initializing payment transaction', null, HttpStatus.BAD_REQUEST);
+      }
+      await queryRunner.commitTransaction();
+      return BaseResponse.success(
+        {
+          paymentUrl: paystackResponse.data.authorization_url,
+        },
+        'Checkout successful. Proceed to payment.',
+        HttpStatus.OK
+      );
     } catch (error) {
-      console.log(error);
+      await queryRunner.rollbackTransaction();
+      console.error(error);
       return BaseResponse.error("Error during checkout", null, HttpStatus.INTERNAL_SERVER_ERROR);
+    } finally {
+      await queryRunner.release();
     }
   }
 
-  async getCartItems(user: any) {
-    throw new Error('Method not implemented.');
+  async processOrderAndEmail(reference: string, customer: Customer): Promise<any> {
+    try {
+      if (!customer) {
+        throw new Error('Authenticated user not found');
+      }
+      const order = await this.orderService.create(customer, reference);
+
+      await this.moveCartToOrder(customer, order.data);
+
+      const estimatedDelivery = this.orderService.calculateDeliveryDate();
+
+      await this.orderService.sendEmailConfirmation(customer.email, estimatedDelivery, order.data.trackingId);
+
+      return BaseResponse.success(order, 'Order processed successfully', HttpStatus.OK);
+    } catch (error) {
+      console.error(error);
+      return BaseResponse.error('Error processing order', null, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
-  
-  
+
+  async moveCartToOrder(customer: Customer, order: OrderEntity): Promise<void> {
+    try {
+      const cart = await this.getCart(customer);
+      const cartItems = cart.items
+
+      if (cartItems.length === 0) {
+        throw new Error('No items in the cart to process');
+      }
+      for (const cartItem of cartItems) {
+        const product = await this.productRepository.findOne({ where: { id: cartItem.product.id } });
+
+        if (!product) {
+          throw new Error(`Product not found for cart item: ${cartItem.id}`);
+        }
+
+        const data = {
+          order: order,
+          product: product,
+          quantity: cartItem.quantity,
+        }
+
+        await this.orderedProductService.create(data);
+      }
+      await this.clearCart(customer);
+    } catch (error) {
+      console.error('Error moving cart items to order:', error);
+      throw new Error('Failed to move cart items to order');
+    }
+  }
+
 
 }

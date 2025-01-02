@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Injectable, Module } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { CartController } from './cart.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -11,12 +11,16 @@ import { OrderedProductEntity } from '../ordered-products/entities/ordered-produ
 import { OrderedProductsService } from '../ordered-products/ordered-products.service';
 import { OrderService } from '../order/order.service';
 import { OrderEntity } from '../order/entities/order.entity';
+import { PaystackService } from 'src/libs/external.api/payment/paystack';
+import { ConfigService } from '@nestjs/config';
+import { NotificationGateway } from 'src/notification-gateway/notification-gateway';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([CartEntity, CartItemEntity, ProductEntity, OrderEntity, OrderedProductEntity])
   ],
   controllers: [CartController],
-  providers: [CartService, CartItemService, OrderService, OrderedProductsService],
+  providers: [CartService, CartItemService, OrderService, OrderedProductsService, PaystackService, ConfigService, NotificationGateway],
+  exports: [CartService],
 })
 export class CartModule {}

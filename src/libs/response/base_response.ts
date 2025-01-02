@@ -3,18 +3,18 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 export class BaseResponse<T> {
   message?: string;
   data?: T; // Make data optional
-  success: boolean;
+  status: boolean;
   status_code: HttpStatus;
 
   private constructor(
-    success: boolean,
+    status: boolean,
     status_code?: HttpStatus,
     message?: string,
     data?: T,
   ) {
-    this.success = success;
+    this.status = status;
     this.status_code =
-      status_code || (success ? HttpStatus.OK : HttpStatus.BAD_REQUEST);
+      status_code || (status ? HttpStatus.OK : HttpStatus.BAD_REQUEST);
     this.message = message;
 
     // Conditionally add data to the response

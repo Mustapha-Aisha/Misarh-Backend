@@ -76,6 +76,9 @@ export class Configuration {
   @IsString()
   readonly PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
+  @IsString()
+  readonly PAYSTACK_BASE_URL = process.env.PAYSTACK_BASE_URL;
+
   constructor() {
     const error = validateSync(this);
 
