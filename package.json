@@ -39,6 +39,7 @@
     "@nestjs/typeorm": "^10.0.2",
     "@nestjs/websockets": "^10.4.15",
     "@ngrok/ngrok": "^1.4.1",
+    "socket.io": "^4.6.0", 
     "@types/node-fetch": "^2.6.12",
     "axios": "^1.7.8",
     "bcrypt": "^5.1.1",

@@ -16,6 +16,8 @@ import { OrderService } from '../order/order.service';
 import { PaystackService } from 'src/libs/external.api/payment/paystack';
 import { QueryRunner } from 'typeorm';
 import { OrderEntity } from '../order/entities/order.entity';
+import { CustomerService } from '../customer/customer.service';
+import { consoleLog } from '@ngrok/ngrok';
 
 @Injectable()
 export class CartService {
@@ -29,19 +31,24 @@ export class CartService {
     private cartItemRepository: Repository<CartItemEntity>,
     private orderService: OrderService,
     private orderedProductService: OrderedProductsService,
-    private paystackService: PaystackService
+    private paystackService: PaystackService,
+    @InjectRepository(Customer)
+    private customerRepository: Repository<Customer>,
   ) { }
 
   async getCart(customer: Customer) {
-    // console.log(customer)
+    if(!customer) {
+      throw new Error('Customer not found');
+    }
     let cart = await this.cartRepository.findOne({
-
       where: { customer: { id: customer.id }, isCheckedOut: false },
       relations: ['items', 'items.product'],
     });
-
     if (!cart) {
-      cart = this.cartRepository.create({ customer: { id: customer.id }, items: [] });
+      cart = this.cartRepository.create({
+        customer: customer,
+        items: [],
+      });
       await this.cartRepository.save(cart);
     }
 
@@ -70,6 +77,7 @@ export class CartService {
       }
 
       await this.cartItemRepository.save(cartItem);
+      await this.cartRepository.save(cart)
       return BaseResponse.success(null, 'Item added to cart successfully', HttpStatus.OK);
     } catch (error) {
       console.error(error);
@@ -80,15 +88,14 @@ export class CartService {
   async clearCart(customer: Customer) {
     try {
       const cart = await this.cartRepository.findOne({
-        where:{customer},
-        relations: ['items'],  
+        where: { customer },
+        relations: ['items', 'items.product'],
       });
-      console.log(cart.items)
       if (!cart || cart.items.length === 0) {
         return BaseResponse.error("Cart is already empty", null, HttpStatus.BAD_REQUEST);
       }
       cart.items = [];
-    await this.cartRepository.save(cart);
+      await this.cartRepository.save(cart);
 
       return BaseResponse.success(null, "Cart cleared successfully", HttpStatus.OK);
     } catch (error) {
@@ -130,20 +137,26 @@ export class CartService {
     }
   }
 
-  async processOrderAndEmail(reference: string, customer: Customer): Promise<any> {
+  async processOrderAndEmail(reference: string, email: string): Promise<any> {
     try {
-      if (!customer) {
+      const cart = await this.cartRepository.findOne({
+        where: { customer: { email: email } },
+        relations: ['customer']
+      });
+      if (!cart) {
         throw new Error('Authenticated user not found');
       }
-      const order = await this.orderService.create(customer, reference);
+      cart.isCheckedOut = true;
+      const order = await this.orderService.create(cart.customer, reference);
 
-      await this.moveCartToOrder(customer, order.data);
+      await this.moveCartToOrder(cart.customer, order.data);
+      console.log('Order processed successfully', cart.customer);
 
       const estimatedDelivery = this.orderService.calculateDeliveryDate();
 
-      await this.orderService.sendEmailConfirmation(customer.email, estimatedDelivery, order.data.trackingId);
+      await this.orderService.sendEmailConfirmation(cart.customer.email, estimatedDelivery, order.data.trackingId);
 
-      return BaseResponse.success(order, 'Order processed successfully', HttpStatus.OK);
+      return BaseResponse.success({ order: order.data, customer: cart.customer }, 'Order processed successfully', HttpStatus.OK);
     } catch (error) {
       console.error(error);
       return BaseResponse.error('Error processing order', null, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -173,6 +186,8 @@ export class CartService {
 
         await this.orderedProductService.create(data);
       }
+      cart.isCheckedOut = true;
+      await this.cartRepository.save(cart)
       await this.clearCart(customer);
     } catch (error) {
       console.error('Error moving cart items to order:', error);

@@ -9,7 +9,7 @@ import { Public } from '../auth/strategy/public-strategy';
 import { CurrentUser } from '../user/decorator/user.decorator';
 
 
-@Controller('customer')
+@Controller('customer/')
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
@@ -18,8 +18,6 @@ export class CustomerController {
    @CurrentUser() customer: Customer,
     @Body() updateCustomerDto: UpdateCustomerDto,
   ): Promise<BaseResponse<Customer>> {
-    console.log("Customer", customer)
-    console.log("Update", updateCustomerDto)
     return this.customerService.updateCustomer(customer, updateCustomerDto);
   }
   
@@ -44,8 +42,6 @@ export class CustomerController {
   async findOne(@Param('id') id: string): Promise<BaseResponse<Customer>> {
     return this.customerService.getCustomerById(id);
   }
-
-
 
   @Delete(':id')
   async remove(@Param('id') id: string): Promise<BaseResponse<void>> {

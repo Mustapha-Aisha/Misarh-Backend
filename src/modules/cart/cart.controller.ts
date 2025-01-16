@@ -33,28 +33,27 @@ export class CartController {
   async checkout(@CurrentUser() customer: Customer, @Body() data: any): Promise<BaseResponse<any>> {
     return await this.cartService.checkout(customer, data)
   }
-
+  
   @Post('processOrders')
   async processOrders(@CurrentUser() customer: Customer, @Body() data: any): Promise<BaseResponse<any>> {
-    return await this.cartService.processOrderAndEmail(data.reference, customer);
+    return await this.cartService.processOrderAndEmail(data.reference, data.clearCartcustomer);
   }
   
-
+  @Public()
   @Post('webhook')
   async handleWebhook(
     @Body() payload: any,
     @Headers('x-paystack-signature') signature: string,
-    @CurrentUser() customer: Customer
   ) {
     try {
       const result = await this.paystackService.handleWebhook(payload, signature);
 
       if (result.status === 'success') {
-        const order = await this.cartService.processOrderAndEmail(payload.reference, customer);
+        const order = await this.cartService.processOrderAndEmail(payload.data.reference, result.data);
 
-        this.notificationGateway.sendPaymentNotification(`${customer.id}`, {
+        this.notificationGateway.sendPaymentNotification(`${order.data.customer.id}`, {
           message: 'Payment verified successfully',
-          orderId: order.id,
+          orderId: order.data.order.id,
         });
         return {
           statusCode: HttpStatus.OK,
@@ -73,9 +72,5 @@ export class CartController {
     }
   }
 
-  @Post("clearCart")
-  async clearCart(@CurrentUser() customer: Customer) {
-    return await this.cartService.clearCart(customer)
-  }
 
 }

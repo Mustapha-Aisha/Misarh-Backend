@@ -33,7 +33,7 @@ export class OrderedProductsService {
         quantity: data.quantity,
       });
 
-      const savedOrderedProduct = await this.orderRepository.save(newOrderedProduct);
+      const savedOrderedProduct = await this.orderedProductRepository.save(newOrderedProduct);
 
       return BaseResponse.success(savedOrderedProduct, 'Ordered product created successfully', HttpStatus.CREATED);
     } catch (error) {

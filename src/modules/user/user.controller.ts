@@ -23,7 +23,6 @@ export class UserController {
   async registerAccount(
     @Body() createUserDto: CreateUserDto,
   ): Promise<BaseResponse<any>> {
-    console.log("ENd point reach here")
     return this.userService.createUser(createUserDto);
   }
 

@@ -11,7 +11,7 @@ export class Customer {
   @Column({ name: 'name' })
   name: string;
 
-  @Column({ name: 'password' })
+  @Column({ name: 'password' , select: false})
   password: string;
 
   @Column({ name: 'contactAddress', nullable: true })
@@ -23,7 +23,7 @@ export class Customer {
   @Column({ name: 'phone', nullable: true })
   phone: string;
 
-  @Column({ name: 'is_deleted', default: false })
+  @Column({ name: 'is_deleted', default: false, select: false })
   is_deleted: boolean;
 
   @OneToOne(() => CartEntity, (cart) => cart.customer, { cascade: true, nullable: true })
@@ -33,3 +33,7 @@ export class Customer {
   @OneToMany(() => OrderEntity, (order) => order.customer)
   orders: OrderEntity[];
 }
+
+
+
+

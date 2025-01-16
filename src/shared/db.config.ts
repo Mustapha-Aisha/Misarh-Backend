@@ -9,7 +9,7 @@ export class DbTypeOrmConfigService implements TypeOrmOptionsFactory {
         return {
             type: 'postgres',
             autoLoadEntities: true,
-            logging:['error', 'query'] ,
+            logging:['error'] ,
             host: process.env.DATABASE_HOST,
             port: parseInt(process.env.DATABASE_PORT),
             database: process.env.DATABASE_NAME,

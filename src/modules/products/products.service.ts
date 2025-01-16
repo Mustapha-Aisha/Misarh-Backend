@@ -26,8 +26,7 @@ export class ProductsService {
         await queryRunner.manager.save(product);
 
         let aiResponseData = await this.ai.generateScentProfile(product.scentDescription);
-        console.log(aiResponseData);
-
+        
         product.categoryId;
         product.discount;
         product.image_url;
@@ -40,8 +39,6 @@ export class ProductsService {
         product.price;
         product.variation;
         product.otherCombinations = aiResponseData["Other Combinations"]
-
-        console.log(product)
 
         await queryRunner.manager.save(product);
         await queryRunner.commitTransaction();
@@ -57,8 +54,6 @@ export class ProductsService {
       }
   }
   
-  
-
   //TODO: fix pagination and cache
   async findAll(data: PaginationDto): Promise<BaseResponse<ProductEntity[]>> {
     try {
@@ -116,9 +111,6 @@ export class ProductsService {
   // Update product by ID
   async update(customer: Customer,id: string, data: UpdateProductDto): Promise<BaseResponse<ProductEntity>> {
     try {
-
-      console.log(customer)
-      console.log("Database",data)
       const existingProduct = await this.productRepository.findOne({ where: { id } });
       if (!existingProduct) {
         return BaseResponse.error("Product not found", null, HttpStatus.NOT_FOUND);

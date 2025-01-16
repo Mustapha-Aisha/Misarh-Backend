@@ -39,9 +39,8 @@ export class PaystackService {
 
   //  Verify Payment Transaction
   async verifyPayment(data: any): Promise<any> {
-    console.log(data)
     try {
-        const response = await axios.get(`${this.baseUrl}/transaction/verify/${data.reference}`, {
+        const response = await axios.get(`${this.baseUrl}/transaction/verify/${data.data.reference}`, {
             headers: {
                 Authorization: `Bearer ${this.secretKey}`,
                 'Content-Type': 'application/json',
@@ -65,20 +64,14 @@ export class PaystackService {
       throw new BadRequestException('Invalid signature');
     }
   
-    this.logger.log('Signature validated successfully');
-  
-    if (status === 'success') {
-      const paymentData = await this.verifyPayment(payload);
-      if (paymentData.status === 'success') {
-        return { status: 'success', message: 'Payment verified successfully.' };
+    const paymentData = await this.verifyPayment(payload);
+
+      if (paymentData.status) {
+        return { status: 'success', data: paymentData.data.customer.email ,message: 'Payment verified successfully.' };
       } else {
         this.logger.warn(`Payment verification failed for reference: ${payload.reference}`);
         return { status: 'failed', message: 'Payment verification failed.' };
       }
-    } else {
-      this.logger.warn(`Payment status is not successful: ${status}`);
-      return { status: 'failed', message: 'Payment failed.' };
-    }
   }
   
 

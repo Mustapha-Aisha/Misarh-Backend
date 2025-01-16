@@ -21,6 +21,7 @@ export class CustomerService {
   // Create a new customer
   async createCustomer(createCustomerDto: CreateCustomerDto): Promise<BaseResponse<Customer>> {
     try {
+      console.log("ENd point reach here")
       const existingCustomer = await this.customerRepository.findOne({
         where: [{ email: createCustomerDto.email }],
       });
@@ -44,13 +45,17 @@ export class CustomerService {
   }
 
   async login(data: CreateLoginDto) {
-    const customer = await this.customerRepository.findOne({
-      where: { email: data.email }, 
-    }); 
+    const customer = await this.customerRepository
+    .createQueryBuilder('customer')
+    .addSelect('customer.password') 
+    .where('customer.email = :email', { email: data.email })
+    .getOne();
+
     if (!customer) {
-      return BaseResponse.error('User not found', null, HttpStatus.NOT_FOUND);
+      return BaseResponse.error('Customer not found', null, HttpStatus.NOT_FOUND);
     }
     const isMatch = await bcrypt.compare(data.password, customer.password);
+
     if (!isMatch) {
       return BaseResponse.error(
         'Invalid credentials',
@@ -62,12 +67,11 @@ export class CustomerService {
     //delete password from user
     delete customer.password;
     return BaseResponse.success(
-      { access_token },
+      { access_token, customer },
       'Login successful',
       HttpStatus.OK,
     );
   }
-
 
   // Get all customers with optional ordering
   //  TODO: PAGINATE THIS

@@ -113,7 +113,6 @@ export class AIAgent {
             );
 
             const parsedJson = JSON.parse(innerJsonString);
-            console.log(parsedJson)
             return parsedJson;
 
 

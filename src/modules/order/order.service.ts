@@ -38,16 +38,23 @@ export class OrderService {
     }
   }
 
-  //paginate this
-  async findAll(): Promise<BaseResponse<OrderEntity[]>> {
+  async fetchAllOrders(page = 1, limit = 10): Promise<BaseResponse<any>> {
     try {
-      const orders = await this.orderRepository.find();
-      if (!orders.length) {
-        return BaseResponse.error("No orders found", [], HttpStatus.NOT_FOUND);
-      }
-      return BaseResponse.success(orders, "Orders retrieved successfully", HttpStatus.OK);
+      const [orders, total] = await this.orderRepository.findAndCount();
+      const pages = Math.ceil(total / limit);
+      return orders.length
+        ? BaseResponse.success(
+            { data: orders, total, page: page, pages },
+            "Orders retrieved successfully",
+            HttpStatus.OK
+          )
+        : BaseResponse.success("No orders found", null, HttpStatus.NOT_FOUND);
     } catch (error) {
-      return BaseResponse.error("Error fetching orders", [], HttpStatus.INTERNAL_SERVER_ERROR);
+      return BaseResponse.error(
+        "Error fetching orders",
+        { data: [], total: 0, page, pages: 0 },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 
@@ -122,7 +129,6 @@ export class OrderService {
     return today.toDateString();  // Returns the date in a readable string format (e.g., "Mon Jan 10 2025")
   }
   
-
   async sendEmailConfirmation(customerEmail: string, estimatedDelivery: string, orderReference: string): Promise<void> {
     console.log("email sent successfully")
     // const transporter = nodemailer.createTransport({

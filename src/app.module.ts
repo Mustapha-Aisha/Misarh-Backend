@@ -23,7 +23,7 @@ import { CartModule } from './modules/cart/cart.module';
 import { CartItemModule } from './modules/cart-item/cart-item.module';
 import { CustomerModule } from './modules/customer/customer.module';
 import { OrderModule } from './modules/order/order.module';
-import { NotificationModule } from './notification-gateway/notification-gateway.module';
+import { NotificationGateway } from './notification-gateway/notification-gateway';
 
 @Module({
   imports: [
@@ -100,12 +100,12 @@ import { NotificationModule } from './notification-gateway/notification-gateway.
     CustomerModule,
     CartModule,
     CartItemModule,
-    NotificationModule
   ],
   controllers: [AppController],
   providers: [
     AppService,
     AIAgent,
+    NotificationGateway,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,

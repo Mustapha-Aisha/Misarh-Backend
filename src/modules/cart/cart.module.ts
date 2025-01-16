@@ -14,10 +14,14 @@ import { OrderEntity } from '../order/entities/order.entity';
 import { PaystackService } from 'src/libs/external.api/payment/paystack';
 import { ConfigService } from '@nestjs/config';
 import { NotificationGateway } from 'src/notification-gateway/notification-gateway';
+import { Customer } from '../customer/entities/customer.entity';
+import { CustomerModule } from '../customer/customer.module';
+// import { CustomerService } from '../customer/customer.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CartEntity, CartItemEntity, ProductEntity, OrderEntity, OrderedProductEntity])
+    TypeOrmModule.forFeature([CartEntity, CartItemEntity, ProductEntity, OrderEntity, OrderedProductEntity, Customer]),
+    CustomerModule
   ],
   controllers: [CartController],
   providers: [CartService, CartItemService, OrderService, OrderedProductsService, PaystackService, ConfigService, NotificationGateway],

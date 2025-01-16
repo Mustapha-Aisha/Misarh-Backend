@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -7,12 +8,26 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
-@WebSocketGateway({ cors: true }) // Enable CORS for frontend connections
+
+@WebSocketGateway(3001, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+})// Enable CORS for frontend connections
+
 export class NotificationGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
   private clients = new Map<string, string>(); // Map userId -> socketId
+
+  private readonly logger = new Logger(NotificationGateway.name);
+
+  constructor() {
+    this.logger.log('WebSocket Gateway Initialized');
+  }
+
 
   handleConnection(client: Socket) {
     const userId = client.handshake.query.userId as string; // Assuming userId is sent in the query
@@ -33,6 +48,7 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
     const clientId = this.clients.get(userId);
     if (clientId) {
       this.server.to(clientId).emit('paymentNotification', data);
+      console.log("sent websockets succesfully")
     } else {
       console.log(`Client with userId ${userId} not connected`);
     }
