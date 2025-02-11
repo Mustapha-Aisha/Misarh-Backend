@@ -30,7 +30,7 @@ export class AuthController {
     return this.authService.verifyWithEmail(verifyAccountEmail);
   }
 
-  @Post('reset-account')
+  @Post('reset-password')
   async resetAccount(
     @Body() resetAccount: ResetAccountDto,
   ): Promise<BaseResponse<UserEntity | null>> {
