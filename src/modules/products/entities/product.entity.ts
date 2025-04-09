@@ -2,19 +2,17 @@ import { OrderedProductEntity } from 'src/modules/ordered-products/entities/orde
 import { Column, Entity, Generated, JoinColumn, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
 
 
-export enum ScentType {
-  BASE = 'base',   
-  TOP = 'top',    
-  MIDDLE = 'middle', 
-  EXOTIC = 'exotic', 
-}
-
 export enum Variation {
   "15ml" = "15ml",
   "30ml" = "30ml",  
   "20ml" = "20ml",
   "50ml" = "50ml",
   "100ml" = "100ml",
+}
+
+export enum productType {
+  CUSTOM = "CUSTOM",
+  PREMADE = "PREMADE",
 }
 
 
@@ -57,8 +55,8 @@ export class ProductEntity {
   @Column({ type: 'varchar', nullable: true })
   customerId: string;
 
-  @Column({ type: 'enum', enum: ScentType, nullable: true })
-  scentType: ScentType; 
+  // @Column({ type: 'enum', enum: ScentType, nullable: true })
+  // scentType: ScentType; 
 
   @Column({ type: 'enum', enum: Variation, nullable: true })  // Using the Variation enum here
   variation: Variation; 
@@ -83,9 +81,11 @@ export class ProductEntity {
 
   @Column({type: 'jsonb', name: 'otherCombinations', nullable: true})
   otherCombinations: string[]
-}
 
-
-export interface AIResponse{
+  @Column({type: 'jsonb', name: 'aiData', nullable: true})
+  aiData: {} 
+  
+  @Column({ type: 'enum', enum: productType, nullable: false, default: productType.CUSTOM })
+  productType: productType;
 
 }

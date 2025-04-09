@@ -26,23 +26,25 @@ export class ProductsService {
         await queryRunner.manager.save(product);
 
         let aiResponseData = await this.ai.generateScentProfile(product.scentDescription);
+        console.log("AI RESPONSE DATA", aiResponseData);
         
         product.categoryId;
         product.discount;
         product.image_url;
-        product.notes = aiResponseData.Notes
-        product.mixDetails = aiResponseData['Mix Details'];
-        product.resultingScentProfile = aiResponseData["Resulting Scent Profile"];
-        product.scentNotes = aiResponseData["Scent Notes"];
-        product.name = aiResponseData.Name;
-        product.scentType;
+        product.notes = aiResponseData.notes
+        product.mixDetails = aiResponseData.mixDetails;
+        product.resultingScentProfile = aiResponseData.resultingScentProfile;
+        product.scentNotes = aiResponseData.scentNotes;
+        product.name = aiResponseData.name;
+        // product.scentType;
         product.price;
         product.variation;
-        product.otherCombinations = aiResponseData["Other Combinations"]
+        product.otherCombinations = aiResponseData.otherCombinations
+        product.aiData = aiResponseData;
 
         await queryRunner.manager.save(product);
         await queryRunner.commitTransaction();
-      
+       
         return BaseResponse.success(product, "Product created successfully", HttpStatus.CREATED);
       
       } catch (error) {

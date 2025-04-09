@@ -9,7 +9,6 @@ export class CartItemEntity {
   id: string;
 
   @ManyToOne(() => CartEntity, cart => cart.items, { eager: true })
-  // @JoinColumn({ name: 'cart_id' })
   cart: CartEntity;
 
   @ManyToOne(() => ProductEntity, { eager: true })
@@ -18,8 +17,4 @@ export class CartItemEntity {
   @Column({ type: 'int', default: 1 })
   quantity: number; 
   
-  // @Column({ type: 'varchar', default: "0" })
-  // totalprice: string;
-
-
 }

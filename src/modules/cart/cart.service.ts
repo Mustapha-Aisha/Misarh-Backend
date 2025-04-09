@@ -57,17 +57,22 @@ export class CartService {
 
   async addToCart(customer: Customer, createCartDto: CreateCartDto) {
     try {
+      console.log('Adding item to cart', createCartDto);
       const cart = await this.getCart(customer);
       const product = await this.productRepository.findOne({
         where: {
           id: createCartDto.productId
         }
       });
+
+      console.log('Product found', product);
       if (!product) {
         return BaseResponse.error('Product not found', null, HttpStatus.NOT_FOUND);
       }
 
       let cartItem = cart.items.find((item) => item.product.id === createCartDto.productId);
+
+      
 
       if (cartItem) {
         cartItem.quantity += createCartDto.quantity;
